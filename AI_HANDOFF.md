@@ -1,6 +1,6 @@
 # Royal Egypt Group — AI Project Handoff
 
-Last updated: 2026-11-04
+Last updated: 2026-11-05
 
 ## Mission
 Build and operate the Royal Egypt Group web platform and, later, a persistent assistant/agent hosted on Cloudflare. The owner wants the platform to remain as free as reasonably possible. Never promise that every component or AI usage will remain free; verify current plan limits before enabling paid usage.
@@ -48,15 +48,16 @@ Known files:
 7. Future persistent Royal Egypt agent that can retain project context, maintain a task queue, inspect the repository, propose code changes, and report results.
 
 ## Existing implementation notes (not yet independently re-verified against live deployment)
-- index.html is an Arabic RTL landing page with black/gold styling and links to the main sections.
+- Feature branch redesigns `index.html` with a photographic property cover hero and Arabic/English/Russian controls; the hero currently references an Unsplash-hosted image URL.
 - properties.html has a listing submission flow using POST /api/listings and reads listings via GET /api/listings.
-- The current property assistant was previously inspected as keyword/rule-based filtering with WhatsApp handoff, not a real LLM integration.
+- A shared multilingual assistant UI and `/api/assistant` endpoint have been added on feature branch `feature/multilingual-hero-assistant-2026-11-05`. The endpoint expects a Cloudflare Pages Workers AI binding named `AI`; it is not live until the binding is added in Cloudflare Pages Settings > Functions > Bindings > Add > Workers AI, variable name `AI`, followed by a redeploy. The prior properties-page keyword assistant is intercepted by the shared UI script and routed to this endpoint.
 - developers.html contains a static developer directory and filtering; it states directory presence is not Royal Egypt endorsement or guarantee.
 - coffee.html and transportation.html were previously noted as informational / coming-soon pages, not complete booking systems.
 - Listing images were previously described as being sent via WhatsApp because direct image storage was not fully configured.
 - admin-listings.html exists but its authentication and authorization must be audited before use.
 
 ## Cloudflare deployment state — needs verification
+- Workers AI pricing checked 2026-11-05: Cloudflare documents 10,000 Neurons/day at no charge on Workers Free; usage beyond this requires Workers Paid and is billed at $0.011 per 1,000 Neurons. On Free, further operations fail after the daily free allocation. Monitor usage before public launch.
 - A Cloudflare Pages project named/associated with royalegyptgroup was visible to the owner.
 - At least one deployment was reported successful.
 - A separate deployment attempt reported: "Failed to publish your function", apparently related to database configuration.
@@ -91,6 +92,7 @@ Build incrementally, with security first:
 4. Audit admin authentication.
 5. Design the persistent agent API and memory schema only after the current D1 setup is verified.
 6. Add an explicit approval gate for all production deployments and external actions.
+7. For feature branch `feature/multilingual-hero-assistant-2026-11-05`, add the Pages Workers AI binding `AI` in Cloudflare Dashboard before expecting `/api/assistant` to return model responses. The endpoint uses `@cf/google/gemma-4-26b-a4b-it`, validates request size and message roles, and instructs the model not to invent prices, availability, legal status or guarantees.
 
 ## Conversation continuity
 This file is a curated project handoff, not a full export of ChatGPT conversations. New important decisions, requirements, and verified progress should be summarized here. Do not claim Cloudflare can automatically import the user's ChatGPT chat history.
