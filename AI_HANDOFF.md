@@ -59,7 +59,7 @@ Verified through the authenticated Cloudflare API:
 - The admin page `admin-listings.html` uses an in-memory password input and sends `Authorization: Bearer ADMIN_TOKEN`; the server checks the secret before listing moderation. Do not store the token in browser storage or share it.
 - Listing image endpoint expects R2 `PROPERTY_IMAGES`, but current public form rejects uploaded files and directs image handoff through WhatsApp.
 - Assistant endpoint uses `@cf/google/gemma-4-26b-a4b-it`, replies in the visitor's language, and now queries only approved public listing fields from D1. It does not read customer contact records.
-- The assistant has a best-effort in-memory per-isolate request limiter; this is not a substitute for global edge protection.
+- The platform-completion feature branch replaces the assistant's in-memory limiter with an atomic D1-backed hashed-IP/minute counter in `intake_rate_limits`, using a separate `assistant:` hash namespace and failing closed with HTTP 503 if D1 protection is unavailable. This change remains in Draft PR #10 and is not deployed.
 - The assistant must never invent price, availability, ownership, legal status, permits, developer endorsement, coffee products, or transport schedules.
 
 ## Website contact intake — Preview test passed

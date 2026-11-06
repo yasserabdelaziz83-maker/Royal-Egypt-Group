@@ -1,0 +1,28 @@
+﻿# Cloudflare
+.wrangler/
+.dev.vars
+.env
+.env.*
+
+# Dependencies
+node_modules/
+
+# Build
+dist/
+.cloudflare/
+
+# Temp repos
+royal-egypt-*/
+royal-egypt-completion/
+royal-egypt-i18n/
+royal-egypt-missing/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
