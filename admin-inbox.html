@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#090a0b">
+<title>Royal Egypt | Owner Inbox</title>
+<style>
+:root{color-scheme:dark;--bg:#090a0b;--panel:#151515;--line:#3c3427;--gold:#d5b36d;--muted:#b7b3aa;--text:#f5f1e8}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:Tahoma,Arial,sans-serif;line-height:1.65}
+header{padding:22px 4vw;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+h1,h2{margin:0;color:var(--gold)}h1{font-size:1.35rem}main{width:min(1200px,92vw);margin:28px auto}
+.panel,.item{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px}
+.login{max-width:520px;margin:8vh auto}.login h2{margin-bottom:12px}
+input,select,button{font:inherit;border-radius:9px;padding:11px 13px;border:1px solid var(--line);background:#0d0e0f;color:var(--text)}
+input{width:100%;margin:10px 0}button{cursor:pointer;background:var(--gold);color:#17130b;border:0;font-weight:700}button.secondary{background:#29251d;color:var(--text);border:1px solid var(--line)}button.danger{background:#6c2929;color:white}
+#app{display:none}.toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:18px}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0}.tabs button{background:#24211b;color:var(--text)}.tabs button[aria-pressed=true]{background:var(--gold);color:#17130b}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:18px 0}.stat{background:#121212;border:1px solid var(--line);border-radius:12px;padding:14px}.stat strong{display:block;color:var(--gold);font-size:1.5rem}
+.list{display:grid;gap:12px}.item h3{margin:0 0 8px;color:var(--gold);font-size:1.08rem}.meta{color:var(--muted);font-size:.9rem;overflow-wrap:anywhere}.detail{white-space:pre-wrap;overflow-wrap:anywhere;margin:10px 0}.actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px}.actions select{max-width:180px}.notice{color:var(--muted);min-height:1.6em}.empty{padding:26px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:12px}
+@media(max-width:650px){.stats{grid-template-columns:1fr}.actions select{max-width:none;flex:1}}
+</style>
+</head>
+<body>
+<header><div><h1>Royal Egypt Group</h1><div class="meta">لوحة متابعة طلبات العملاء والفرص والعقارات</div></div><button id="logout" class="secondary" hidden>تسجيل الخروج</button></header>
+<main>
+<section id="login" class="panel login"><h2>دخول الإدارة</h2><p class="meta">أدخل رمز الإدارة. لن يتم حفظه على الجهاز.</p><form id="loginForm"><input id="token" type="password" autocomplete="current-password" required placeholder="رمز الإدارة"><button type="submit">دخول</button></form><p id="loginStatus" class="notice" role="status"></p></section>
+<section id="app">
+<div class="toolbar"><button id="refresh" class="secondary">تحديث البيانات</button><span id="updated" class="meta"></span></div>
+<div class="stats">
+<div class="stat">العملاء الجدد<strong id="customerCount">0</strong></div>
+<div class="stat">الفرص التجارية<strong id="opportunityCount">0</strong></div>
+<div class="stat">إعلانات العقارات المعلقة<strong id="pendingCount">0</strong></div>
+</div>
+<nav class="tabs" aria-label="أقسام الطلبات">
+<button data-tab="customers" aria-pressed="true">العملاء</button>
+<button data-tab="opportunities" aria-pressed="false">الفرص</button>
+<button data-tab="listings" aria-pressed="false">العقارات</button>
+</nav>
+<p id="appStatus" class="notice" role="status"></p>
+<div id="records" class="list"></div>
+</section>
+</main>
+<script>
+(()=>{
+"use strict";
+let adminToken="";
+let data={customers:[],opportunities:[],listings:[]};
+let activeTab="customers";
+const $=id=>document.getElementById(id);
+function el(tag,cls,text){const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=String(text);return n;}
+function authHeaders(){return {"Authorization":"Bearer "+adminToken,"Content-Type":"application/json"};}
+async function api(path,options={}){const r=await fetch(path,{...options,headers:{...authHeaders(),...(options.headers||{})},cache:"no-store"});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||"تعذر تنفيذ الطلب");return d;}
+$("loginForm").addEventListener("submit",async e=>{e.preventDefault();adminToken=$("token").value.trim();$("loginStatus").textContent="جارٍ التحقق...";try{await load();$("token").value="";$("login").style.display="none";$("app").style.display="block";$("logout").hidden=false;}catch(err){adminToken="";$("loginStatus").textContent=err.message;$("token").value="";}});
+$("logout").addEventListener("click",()=>{adminToken="";data={customers:[],opportunities:[],listings:[]};$("app").style.display="none";$("login").style.display="block";$("logout").hidden=true;$("records").replaceChildren();});
+$("refresh").addEventListener("click",async()=>{try{await load();$("appStatus").textContent="تم تحديث البيانات";}catch(e){$("appStatus").textContent=e.message;}});
+document.querySelectorAll("[data-tab]").forEach(b=>b.addEventListener("click",()=>{activeTab=b.dataset.tab;document.querySelectorAll("[data-tab]").forEach(x=>x.setAttribute("aria-pressed",String(x===b)));render();}));
+async function load(){const d=await api("/api/admin/inbox");data={customers:d.customers||[],opportunities:d.opportunities||[],listings:d.listings||[]};$("customerCount").textContent=data.customers.length;$("opportunityCount").textContent=data.opportunities.length;$("pendingCount").textContent=data.listings.filter(x=>x.status==="pending").length;$("updated").textContent="آخر تحديث: "+new Date(d.generated_at||Date.now()).toLocaleString("ar-EG");render();}
+function field(label,value){const p=el("p","detail");p.append(el("strong","",label+": "));p.append(document.createTextNode(value==null||value===""?"—":String(value)));return p;}
+function card(title,meta,details){const c=el("article","item");c.append(el("h3","",title||"بدون عنوان"));c.append(el("div","meta",meta||""));if(details)c.append(field("التفاصيل",details));return c;}
+function statusControl(type,id,current){const wrap=el("div","actions");const select=el("select");for(const [v,l] of [["new","جديد"],["contacted","تم التواصل"],["qualified","مؤهل"],["closed","مغلق"],["archived","مؤرشف"]]){const o=el("option","",l);o.value=v;o.selected=v===current;select.append(o);}const save=el("button","secondary","حفظ الحالة");save.addEventListener("click",async()=>{save.disabled=true;try{await api("/api/admin/inbox",{method:"PATCH",body:JSON.stringify({type,id,status:select.value})});$("appStatus").textContent="تم تحديث حالة السجل";await load();}catch(e){$("appStatus").textContent=e.message;save.disabled=false;}});wrap.append(select,save);return wrap;}
+function render(){const host=$("records");host.replaceChildren();const items=data[activeTab]||[];if(!items.length){host.append(el("div","empty","لا توجد سجلات في هذا القسم حاليًا."));return;}
+for(const item of items){
+if(activeTab==="customers"){const c=card(item.name,[item.phone,item.email,item.language,item.created_at].filter(Boolean).join(" · "),item.interests||item.notes);c.append(field("المصدر",item.source));c.append(statusControl("customer",item.id,item.status));host.append(c);}
+else if(activeTab==="opportunities"){const c=card(item.title,[item.type,item.country,item.status,item.created_at].filter(Boolean).join(" · "),item.details);c.append(field("القيمة التقديرية",item.estimated_value));c.append(statusControl("opportunity",item.id,item.status));host.append(c);}
+else{const c=card(item.title,[item.contact_name,item.contact_phone,item.property_type,item.location,item.status,item.created_at].filter(Boolean).join(" · "),item.description);c.append(field("السعر",item.price));if(item.status==="pending"){const actions=el("div","actions");const approve=el("button","","موافقة ونشر");const reject=el("button","danger","رفض");for(const [button,status] of [[approve,"approved"],[reject,"rejected"]])button.addEventListener("click",async()=>{button.disabled=true;try{await api("/api/admin/listings",{method:"PATCH",body:JSON.stringify({id:item.id,status})});$("appStatus").textContent=status==="approved"?"تمت الموافقة على الإعلان":"تم رفض الإعلان";await load();}catch(e){$("appStatus").textContent=e.message;button.disabled=false;}});actions.append(approve,reject);c.append(actions);}host.append(c);}
+}}
+})();
+</script>
+</body>
+</html>

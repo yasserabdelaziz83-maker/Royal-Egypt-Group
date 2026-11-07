@@ -2,7 +2,30 @@ name = "royalegyptgroup"
 compatibility_date = "2026-11-04"
 pages_build_output_dir = "./"
 
+# Default/local and production-safe bindings.
 [[d1_databases]]
 binding = "DB"
 database_name = "royal-eg-listings"
 database_id = "23185e4e-d299-41b2-abd7-bc533466e94a"
+
+[ai]
+binding = "AI"
+
+# Pages Preview must use the isolated test database, never Production D1.
+[[env.preview.d1_databases]]
+binding = "DB"
+database_name = "royal-ai-business-center-test"
+database_id = "6e57492c-717d-4fb6-b122-75e5c14cf161"
+migrations_dir = "migrations/preview"
+
+[env.preview.ai]
+binding = "AI"
+
+# Explicit Production environment keeps the real database on the production deployment only.
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "royal-eg-listings"
+database_id = "23185e4e-d299-41b2-abd7-bc533466e94a"
+
+[env.production.ai]
+binding = "AI"
